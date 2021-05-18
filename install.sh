@@ -1,7 +1,7 @@
 #!/bin/sh -x
 
 [ -z "$PREFIX" ] && {
-    if [ "$EUID" -eq 0 ]
+    if [ "$(id -u)" -eq 0 ]
     then
         PREFIX=/usr
     else
