@@ -65,17 +65,19 @@ case "$1" in
         do
             if [ -f "$sess/pid" ]
             then
-                echo "$(sess_id "$sess")\t[running] $(cat "$sess/command.txt")"
+                echo "$(sess_id "$sess")\t$(tput bold)[running] $(cat "$sess/command.txt")$(tput sgr0)"
                 echo "\t$(cat "$sess/starttime.txt")"
             else
                 exitcode="$(cat "$sess/exitcode.txt")"
                 if [ "$exitcode" -eq 0 ]
                 then
                     label="done"
+                    color=2
                 else
-                    label="fail:$exitcode"
+                    label="fail:$(printf "%3d" "$exitcode")"
+                    color=4
                 fi
-                echo "$(sess_id "$sess")\t[$label] $(cat "$sess/command.txt")"
+                echo "$(sess_id "$sess")\t$(tput bold)$(tput setf $color)[$label]$(tput sgr0)$(tput bold) $(cat "$sess/command.txt")$(tput sgr0)"
                 echo "\t$(cat "$sess/starttime.txt") -- $(cat "$sess/endtime.txt")"
             fi
         done
