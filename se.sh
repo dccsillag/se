@@ -68,7 +68,14 @@ case "$1" in
                 echo "$(sess_id "$sess")\t[running] $(cat "$sess/command.txt")"
                 echo "\t$(cat "$sess/starttime.txt")"
             else
-                echo "$(sess_id "$sess")\t[done] $(cat "$sess/command.txt")"
+                exitcode="$(cat "$sess/exitcode.txt")"
+                if [ "$exitcode" -eq 0 ]
+                then
+                    label="done"
+                else
+                    label="fail:$exitcode"
+                fi
+                echo "$(sess_id "$sess")\t[$label] $(cat "$sess/command.txt")"
                 echo "\t$(cat "$sess/starttime.txt") -- $(cat "$sess/endtime.txt")"
             fi
         done
@@ -126,6 +133,7 @@ case "$1" in
             printf "'%s' " "$(echo "$arg" | sed s/\'/\'\\\\\'\'/g)"
         done >> "$scriptfile"
         echo >> "$scriptfile"
+        echo "echo \$? > '$sessdir/exitcode.txt'" >> "$scriptfile"
         echo "date > '$sessdir/endtime.txt'" >> "$scriptfile"
         chmod +x "$scriptfile"
 
