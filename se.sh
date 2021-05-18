@@ -1,10 +1,5 @@
 #!/bin/sh
 
-is_number() {
-    echo "$1" | head -1 | grep '^[0-9]\+$' > /dev/null
-    return $?
-}
-
 [ "$#" -lt 1 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ] && {
     echo "Usage:"
     echo "  $0 -l        # list sessions"
@@ -37,6 +32,24 @@ get_session() {
     echo "$ROOTDIR/$(hostname)-$1"
 }
 
+get_running_session() {
+    sess=$(get_session "$1")
+    [ -f "$sess/pid" ] || {
+        echo "Session has already finished: $1" 1>&2
+        exit 1
+    }
+    echo "$sess"
+}
+
+get_finished_session() {
+    sess=$(get_session "$1")
+    [ -f "$sess/pid" ] && {
+        echo "Session is still running: $1" 1>&2
+        exit 1
+    }
+    echo "$sess"
+}
+
 sess_id() {
     basename "$1" | sed "s/^.\+-\([0-9]\+\)$/\1/"
 }
@@ -46,12 +59,6 @@ do
     [ -f "$sess/pid" ] || continue
     ( kill -0 "$(cat "$sess/pid")" 2> /dev/null ) || rm "$sess/pid" "$sess/run.sh"
 done
-
-is_number "$1" && {
-    echo "WARNING: The usage \`se <NUMBER>\` is deprecated and now has no meaning."
-    echo "         Use \`se -v $1\` instead."
-    exit 1
-}
 
 case "$1" in
     -l) for sess in $(list_sessions)
@@ -76,11 +83,7 @@ case "$1" in
             "$@" "$f"
         fi
         ;;
-    -d) sess="$(get_session "$2")"
-        [ -f "$sess/pid" ] && {
-            echo "Session is running, and thus cannot be deleted: '$2'."
-            exit 1
-        }
+    -d) sess="$(get_finished_session "$2")"
         echo "Are you sure you want to delete this session?"
         echo "  COMMAND: $(cat "$sess/command.txt")"
         echo "  STARTED RUNNING:  $(cat "$sess/starttime.txt")"
@@ -97,9 +100,9 @@ case "$1" in
         set -x
         rm -rf "$sess"
         ;;
-    -c) kill -2  "$(cat "$ROOTDIR/$(get_id "$2")/pid")" ;;
-    -t) kill -15 "$(cat "$ROOTDIR/$(get_id "$2")/pid")" ;;
-    -K) kill -9  "$(cat "$ROOTDIR/$(get_id "$2")/pid")" ;;
+    -c) kill -2  "$(cat "$(get_running_session "$2")/pid")" ;;
+    -t) kill -15 "$(cat "$(get_running_session "$2")/pid")" ;;
+    -K) kill -9  "$(cat "$(get_running_session "$2")/pid")" ;;
     -*) echo "Bad flag: $1. See \`se -h\`." ;;
     *)  # Get new ID
         id=0
