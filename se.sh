@@ -24,7 +24,7 @@ get_session() {
 }
 
 session_exists() {
-    [ -d $(get_session "$1") ]
+    [ -d "$(get_session "$1")" ]
 }
 
 is_running() {
@@ -78,8 +78,8 @@ case "$1" in
         do
             if [ -f "$sess/pid" ]
             then
-                echo "$(sess_id "$sess")\t$(tput bold)[running] $(cat "$sess/command.txt")$(tput sgr0)"
-                echo "\t$(cat "$sess/starttime.txt")"
+                printf "%3d  $(tput bold)[running] %s$(tput sgr0)\n" "$(sess_id "$sess")" "$(cat "$sess/command.txt")"
+                printf "     %s\n" "$(cat "$sess/starttime.txt")"
             else
                 exitcode="$(cat "$sess/exitcode.txt")"
                 if [ "$exitcode" -eq 0 ]
@@ -90,8 +90,8 @@ case "$1" in
                     label="fail:$(printf "%3d" "$exitcode")"
                     color=4
                 fi
-                echo "$(sess_id "$sess")\t$(tput bold)$(tput setf $color)[$label]$(tput sgr0)$(tput bold) $(cat "$sess/command.txt")$(tput sgr0)"
-                echo "\t$(cat "$sess/starttime.txt") -- $(cat "$sess/endtime.txt")"
+                printf "%3d  $(tput bold)$(tput setf $color)[$label]$(tput sgr0)$(tput bold) %s$(tput sgr0)\n" "$(sess_id "$sess")" "$(cat "$sess/command.txt")"
+                printf "     %s -- %s\n" "$(cat "$sess/starttime.txt")" "$(cat "$sess/endtime.txt")"
             fi
         done
         ;;
@@ -142,18 +142,21 @@ case "$1" in
         outfile="$sessdir/stdout.txt"
         pidfile="$sessdir/pid"
         cmdfile="$sessdir/command.txt"
+        starttimefile="$sessdir/starttime.txt"
+        endtimefile="$sessdir/endtime.txt"
+        exitcodefile="$sessdir/exitcode.txt"
 
         # Create shell script to run with nohup
-        echo "date > '$sessdir/starttime.txt'" >> "$scriptfile"
+        echo "date > '$starttimefile'" >> "$scriptfile"
         printf '( ' >> "$scriptfile"
         for arg in "$@"
         do
             printf "'%s' " "$(echo "$arg" | sed s/\'/\'\\\\\'\'/g)"
         done >> "$scriptfile"
-        echo "; echo \$? > '$sessdir/exitcode.txt' ) &" >> "$scriptfile"
+        echo "; echo \$? > '$exitcodefile' ) &" >> "$scriptfile"
         echo "pid=\$!" >> "$scriptfile"
-        echo "echo \$pid > '$sessdir/pid'" >> "$scriptfile"
-        echo "date > '$sessdir/endtime.txt'" >> "$scriptfile"
+        echo "echo \$pid > '$pidfile'" >> "$scriptfile"
+        echo "date > '$endtimefile'" >> "$scriptfile"
         chmod +x "$scriptfile"
 
         # Run with nohup
