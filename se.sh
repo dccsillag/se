@@ -19,26 +19,39 @@ list_sessions() {
     find "$ROOTDIR" -maxdepth 1 -type d -name "$(hostname)-*"
 }
 
-session_exists() {
-    [ -d "$ROOTDIR/$(hostname)-$1" ]
-}
-
 get_session() {
-    session_exists "$1" || {
-        echo "No such session: $1" 1>&2
-        exit 1
-    }
-
     echo "$ROOTDIR/$(hostname)-$1"
 }
 
-get_running_session() {
-    sess=$(get_session "$1")
-    [ -f "$sess/pid" ] || {
+session_exists() {
+    [ -d $(get_session "$1") ]
+}
+
+is_running() {
+    session_exists "$1" && [ -f "$(get_session "$1")/pid" ]
+}
+
+ensure_session_exists() {
+    session_exists "$1" || {
+        echo "Session does not exist: $1" 1>&2
+        exit 1
+    }
+}
+
+ensure_session_is_running() {
+    ensure_session_exists "$1"
+    is_running "$1" || {
         echo "Session has already finished: $1" 1>&2
         exit 1
     }
-    echo "$sess"
+}
+
+ensure_session_is_finished() {
+    ensure_session_exists "$1"
+    is_running "$1" && {
+        echo "Session has already finished: $1" 1>&2
+        exit 1
+    }
 }
 
 get_finished_session() {
@@ -87,12 +100,14 @@ case "$1" in
             clear -x
             "$0" -v "$2" tail -f
         else
+            ensure_session_exists "$2"
             f="$(get_session "$2")/stdout.txt"
             shift 2
             "$@" "$f"
         fi
         ;;
-    -d) sess="$(get_finished_session "$2")"
+    -d) ensure_session_is_finished "$2"
+        sess="$(get_finished_session "$2")"
         echo "Are you sure you want to delete this session?"
         echo "  COMMAND: $(cat "$sess/command.txt")"
         echo "  STARTED RUNNING:  $(cat "$sess/starttime.txt")"
@@ -109,9 +124,9 @@ case "$1" in
         set -x
         rm -rf "$sess"
         ;;
-    -c) kill -2  "$(cat "$(get_running_session "$2")/pid")" ;;
-    -t) kill -15 "$(cat "$(get_running_session "$2")/pid")" ;;
-    -K) kill -9  "$(cat "$(get_running_session "$2")/pid")" ;;
+    -c) ensure_session_is_running "$2" && kill -2  "$(cat "$(get_running_session "$2")/pid")" ;;
+    -t) ensure_session_is_running "$2" && kill -15 "$(cat "$(get_running_session "$2")/pid")" ;;
+    -K) ensure_session_is_running "$2" && kill -9  "$(cat "$(get_running_session "$2")/pid")" ;;
     -*) echo "Bad flag: $1. See \`se -h\`." ;;
     *)  # Get new ID
         id=0
