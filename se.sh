@@ -130,25 +130,24 @@ case "$1" in
 
         # Create shell script to run with nohup
         echo "date > '$sessdir/starttime.txt'" >> "$scriptfile"
+        printf '( ' >> "$scriptfile"
         for arg in "$@"
         do
             printf "'%s' " "$(echo "$arg" | sed s/\'/\'\\\\\'\'/g)"
         done >> "$scriptfile"
-        echo >> "$scriptfile"
-        echo "echo \$? > '$sessdir/exitcode.txt'" >> "$scriptfile"
+        echo "; echo \$? > '$sessdir/exitcode.txt' ) &" >> "$scriptfile"
+        echo "pid=\$!" >> "$scriptfile"
+        echo "echo \$pid > '$sessdir/pid'" >> "$scriptfile"
         echo "date > '$sessdir/endtime.txt'" >> "$scriptfile"
         chmod +x "$scriptfile"
 
         # Run with nohup
         nohup "$scriptfile" > "$outfile" 2>&1 &
-        pid="$!"
-        echo "$pid" > "$pidfile"
         echo "$*" > "$cmdfile"
 
         echo "Running in the background."
         echo "  COMMAND: $*"
         echo "  HOST: $(hostname)"
-        echo "  PID: $pid"
         echo "  ID: $id"
         ;;
 esac
