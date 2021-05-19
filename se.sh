@@ -97,23 +97,11 @@ case "$1" in
             "$@" "$f"
         fi
         ;;
-    -d) ensure_session_is_finished "$2"
-        sess="$(get_session "$2")"
-        echo "$(tput bold)Are you sure you want to delete this session?$(tput sgr0)"
-        echo "  $(tput bold)COMMAND:$(tput sgr0) $(cat "$sess/command.txt")"
-        echo "  $(tput bold)STARTED RUNNING:$(tput sgr0)  $(cat "$sess/starttime.txt")"
-        echo "  $(tput bold)FINISHED RUNNING:$(tput sgr0) $(cat "$sess/endtime.txt")"
-        echo
-        printf '[yn] '
-        read -r yn
-        case "$yn" in
-            [Yy]*)  echo "Deleting session '$2'" ;;
-            [Nn]*)  echo "Aborting."; exit 0 ;;
-            *)      echo "Answer was not 'yes' nor 'no'; aborting"; exit 1 ;;
-        esac
-
-        set -x
-        rm -rf "$sess"
+    -d) shift 1
+        for id in "$@"
+        do
+            ( ensure_session_is_finished "$id" && rm -rf "$(get_session "$id")" )
+        done
         ;;
     -c) ensure_session_is_running "$2" && kill -2  "$(cat "$(get_session "$2")/pid")" ;;
     -t) ensure_session_is_running "$2" && kill -15 "$(cat "$(get_session "$2")/pid")" ;;
