@@ -49,7 +49,7 @@ ensure_session_is_running() {
 ensure_session_is_finished() {
     ensure_session_exists "$1"
     is_running "$1" && {
-        echo "Session has already finished: $1" 1>&2
+        echo "Session is still running: $1" 1>&2
         exit 1
     }
 }
