@@ -139,14 +139,15 @@ case "$1" in
 
         # Create shell script to run with nohup
         echo "date > '$starttimefile'" >> "$scriptfile"
-        printf '( ' >> "$scriptfile"
         for arg in "$@"
         do
             printf "'%s' " "$(echo "$arg" | sed s/\'/\'\\\\\'\'/g)"
         done >> "$scriptfile"
-        echo "; echo \$? > '$exitcodefile' ) &" >> "$scriptfile"
+        echo "&" >> "$scriptfile"
         echo "pid=\$!" >> "$scriptfile"
         echo "echo \$pid > '$pidfile'" >> "$scriptfile"
+        echo "wait \$pid" >> "$scriptfile"
+        echo "echo \$? > '$exitcodefile'" >> "$scriptfile"
         echo "date > '$endtimefile'" >> "$scriptfile"
         chmod +x "$scriptfile"
 
