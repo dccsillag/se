@@ -44,6 +44,7 @@ ensure_session_is_running() {
         echo "Session has already finished: $1" 1>&2
         exit 1
     }
+    true
 }
 
 ensure_session_is_finished() {
@@ -52,6 +53,7 @@ ensure_session_is_finished() {
         echo "Session is still running: $1" 1>&2
         exit 1
     }
+    true
 }
 
 for id in $(list_sessions)
