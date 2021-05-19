@@ -54,15 +54,6 @@ ensure_session_is_finished() {
     }
 }
 
-get_finished_session() {
-    sess=$(get_session "$1")
-    [ -f "$sess/pid" ] && {
-        echo "Session is still running: $1" 1>&2
-        exit 1
-    }
-    echo "$sess"
-}
-
 sess_id() {
     basename "$1" | sed "s/^.\+-\([0-9]\+\)$/\1/"
 }
@@ -107,11 +98,11 @@ case "$1" in
         fi
         ;;
     -d) ensure_session_is_finished "$2"
-        sess="$(get_finished_session "$2")"
-        echo "Are you sure you want to delete this session?"
-        echo "  COMMAND: $(cat "$sess/command.txt")"
-        echo "  STARTED RUNNING:  $(cat "$sess/starttime.txt")"
-        echo "  FINISHED RUNNING: $(cat "$sess/endtime.txt")"
+        sess="$(get_session "$2")"
+        echo "$(tput bold)Are you sure you want to delete this session?$(tput sgr0)"
+        echo "  $(tput bold)COMMAND:$(tput sgr0) $(cat "$sess/command.txt")"
+        echo "  $(tput bold)STARTED RUNNING:$(tput sgr0)  $(cat "$sess/starttime.txt")"
+        echo "  $(tput bold)FINISHED RUNNING:$(tput sgr0) $(cat "$sess/endtime.txt")"
         echo
         printf '[yn] '
         read -r yn
@@ -124,9 +115,9 @@ case "$1" in
         set -x
         rm -rf "$sess"
         ;;
-    -c) ensure_session_is_running "$2" && kill -2  "$(cat "$(get_running_session "$2")/pid")" ;;
-    -t) ensure_session_is_running "$2" && kill -15 "$(cat "$(get_running_session "$2")/pid")" ;;
-    -K) ensure_session_is_running "$2" && kill -9  "$(cat "$(get_running_session "$2")/pid")" ;;
+    -c) ensure_session_is_running "$2" && kill -2  "$(cat "$(get_session "$2")/pid")" ;;
+    -t) ensure_session_is_running "$2" && kill -15 "$(cat "$(get_session "$2")/pid")" ;;
+    -K) ensure_session_is_running "$2" && kill -9  "$(cat "$(get_session "$2")/pid")" ;;
     -*) echo "Bad flag: $1. See \`se -h\`." ;;
     *)  # Get new ID
         id=0
