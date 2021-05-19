@@ -16,7 +16,7 @@ ROOTDIR="$HOME/.local/share/se"
 mkdir -p "$ROOTDIR"
 
 list_sessions() {
-    find "$ROOTDIR" -maxdepth 1 -type d -name "$(hostname)-*"
+    ls "$ROOTDIR" -r --sort=time | grep "$(hostname)-*" | sed "s/$(hostname)-\\(.\\+\\)/\\1/"
 }
 
 get_session() {
@@ -54,22 +54,20 @@ ensure_session_is_finished() {
     }
 }
 
-sess_id() {
-    basename "$1" | sed "s/^.\+-\([0-9]\+\)$/\1/"
-}
-
-for sess in $(list_sessions)
+for id in $(list_sessions)
 do
+    sess="$(get_session "$id")"
     [ -f "$sess/pid" ] || continue
     ( kill -0 "$(cat "$sess/pid")" 2> /dev/null ) || rm "$sess/pid" "$sess/run.sh"
 done
 
 case "$1" in
-    -l) for sess in $(list_sessions)
+    -l) for id in $(list_sessions)
         do
+            sess="$(get_session "$id")"
             if [ -f "$sess/pid" ]
             then
-                printf "%3d  $(tput bold)[running] %s$(tput sgr0)\n" "$(sess_id "$sess")" "$(cat "$sess/command.txt")"
+                printf "%3d  $(tput bold)[running] %s$(tput sgr0)\n" "$id" "$(cat "$sess/command.txt")"
                 printf "     %s\n" "$(cat "$sess/starttime.txt")"
             else
                 exitcode="$(cat "$sess/exitcode.txt")"
@@ -81,7 +79,7 @@ case "$1" in
                     label="fail:$(printf "%3d" "$exitcode")"
                     color=4
                 fi
-                printf "%3d  $(tput bold)$(tput setf $color)[$label]$(tput sgr0)$(tput bold) %s$(tput sgr0)\n" "$(sess_id "$sess")" "$(cat "$sess/command.txt")"
+                printf "%3d  $(tput bold)$(tput setf $color)[$label]$(tput sgr0)$(tput bold) %s$(tput sgr0)\n" "$id" "$(cat "$sess/command.txt")"
                 printf "     %s -- %s\n" "$(cat "$sess/starttime.txt")" "$(cat "$sess/endtime.txt")"
             fi
         done
