@@ -143,9 +143,6 @@ case "$1" in
         nohup "$scriptfile" > "$outfile" 2>&1 &
         echo "$*" > "$cmdfile"
 
-        echo "Running in the background."
-        echo "  COMMAND: $*"
-        echo "  HOST: $(hostname)"
-        echo "  ID: $id"
+        echo "Running in the background: $(tput dim)$(hostname)-$(tput bold)$id$(tput sgr0)"
         ;;
 esac
