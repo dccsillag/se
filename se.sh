@@ -12,6 +12,12 @@
     exit 0
 }
 
+C_RESET='\033[0m'
+C_BOLD='\033[1m'
+C_DIM='\033[2m'
+C_RED='\033[31m'
+C_GREEN='\033[32m'
+
 ROOTDIR="$HOME/.local/share/se"
 mkdir -p "$ROOTDIR"
 
@@ -69,19 +75,19 @@ case "$1" in
             sess="$(get_session "$id")"
             if [ -f "$sess/pid" ]
             then
-                printf "%3d  $(tput bold)[running] %s$(tput sgr0)\n" "$id" "$(cat "$sess/command.txt")"
+                printf "%3d  $C_BOLD[running] %s$C_RESET\n" "$id" "$(cat "$sess/command.txt")"
                 printf "     %s\n" "$(cat "$sess/starttime.txt")"
             else
                 exitcode="$(cat "$sess/exitcode.txt")"
                 if [ "$exitcode" -eq 0 ]
                 then
                     label="done"
-                    color=2
+                    color="$C_GREEN"
                 else
                     label="fail:$(printf "%3d" "$exitcode")"
-                    color=4
+                    color="$C_RED"
                 fi
-                printf "%3d  $(tput bold)$(tput setf $color)[$label]$(tput sgr0)$(tput bold) %s$(tput sgr0)\n" "$id" "$(cat "$sess/command.txt")"
+                printf "%3d  $C_BOLD$color[$label]$C_RESET$C_BOLD %s$C_RESET\n" "$id" "$(cat "$sess/command.txt")"
                 printf "     %s -- %s\n" "$(cat "$sess/starttime.txt")" "$(cat "$sess/endtime.txt")"
             fi
         done
@@ -143,6 +149,6 @@ case "$1" in
         nohup "$scriptfile" > "$outfile" 2>&1 &
         echo "$*" > "$cmdfile"
 
-        echo "Running in the background: $(tput dim)$(hostname)-$(tput bold)$id$(tput sgr0)"
+        echo "Running in the background: $C_DIM$(hostname)-$C_BOLD$id$C_RESET"
         ;;
 esac
